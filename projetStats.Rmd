@@ -1,0 +1,9 @@
+---
+title: "Projet etude des"
+author: ""
+date: ""
+output: pdf_document
+langages: french 
+editor_options: 
+  chunk_output_type: inline
+---
