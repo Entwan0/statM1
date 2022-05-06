@@ -1,9 +1,61 @@
 ---
-title: "Projet etude des"
-author: ""
-date: ""
+title: "Projet etude des ventes sur xbox game pass"
+author: "Arly et Antoine"
+date: "06/05/2022"
 output: pdf_document
 langages: french 
 editor_options: 
   chunk_output_type: inline
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+library(tidyverse)
+library(ggplot2)
+library(forcats)
+library(stringr)
+version
+```
+
+Ici nous allons procéder à la récupération du jeu de données trouvé sur Internet et nous allons le mettre dans la variable nommée file.
+```{r}
+file='vgsales.csv'
+app<- read_delim(file,delim=",") 
+```
+Nous avons, dans un premier temps décidé de regarder si les développeurs qui ont beaucoup de jeux à leur actif sur l'xbox Game passe ont plus de ventes.
+
+Donc on commence par regarder ceux qui ont le plus de jeux à leur actif.
+```{r}
+app %>% 
+  group_by(Publisher) %>% 
+  count(Name,name="nb") %>% 
+  summarize(countApp = sum(nb)) %>% 
+  arrange(-countApp) %>% head(n=15) ;
+```
+
+Ici on a le tableau des 10 premiers développeurs qui ont le plus d'applications à leur actif.
+
+Ensuite on va faire un comparatif avec leur ventes
+```{r message=FALSE, warning=FALSE}
+nbApp<-app %>% 
+  filter(!is.na(`Global_Sales`)) %>% 
+  group_by(Publisher) %>% count(Name,name="nb") %>% 
+  summarize(countApp = sum(nb)) %>% 
+  arrange(-countApp)
+
+moyGradeDev<-app %>% 
+  filter(!is.na(`Global_Sales`)) %>% 
+  group_by(Publisher) %>% 
+  summarize(AvgSales=mean(`Global_Sales`))
+
+tableFinal<-left_join(nbApp,moyGradeDev)%>%
+  arrange(-nbApp$countApp)
+
+tableFinal %>% select_all()
+
+tableFinal %>%
+  ggplot(tableFinal,mapping=aes(countApp,AvgSales,color=AvgSales))+
+  geom_jitter()+
+  geom_smooth(method="auto",color="red",se=TRUE)+
+  ggtitle("Vente moyenne en fonction du nombre d'applications")
+```
