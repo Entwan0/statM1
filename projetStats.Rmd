@@ -22,6 +22,7 @@ Ici nous allons procéder à la récupération du jeu de données trouvé sur In
 file='vgsales.csv'
 app<- read_delim(file,delim=",") 
 ```
+  
 Nous avons, dans un premier temps décidé de regarder si les développeurs qui ont beaucoup de jeux à leur actif sur l'xbox Game passe ont plus de ventes.
 
 Donc on commence par regarder ceux qui ont le plus de jeux à leur actif.
@@ -59,3 +60,17 @@ tableFinal %>%
   geom_smooth(method="auto",color="red",se=TRUE)+
   ggtitle("Vente moyenne en fonction du nombre d'applications")
 ```
+
+
+Ici, nous allons regarder si la catégorie du jeu a une influence sur les notes, en moyenne.
+```{r , fig.width=20,fig.height=4}
+prAvg<- app %>%
+  filter(!is.na(`Global_Sales`)) %>%
+  group_by(`Genre`) %>%
+  summarise(AvgSell=mean(`Global_Sales`),sd=sd(`Global_Sales`)) %>%
+  ggplot(app,mapping=aes(`Genre`,AvgSell,fill=`Genre`))+
+  geom_col()
+  prAvg
+    ggtitle("Vente moyenne en fonction du genre principal de l'application")
+```
+>> TO DO << FAIRE DES BOX PLOT
