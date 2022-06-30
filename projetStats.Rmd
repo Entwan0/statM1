@@ -22,7 +22,151 @@ Ici nous allons procéder à la récupération du jeu de données trouvé sur In
 file='vgsales.csv'
 app<- read_delim(file,delim=",") 
 ```
-  
+Nous avond un jeu de données d'une population de 16600 individus.
+Ces données représente le nombre de vente des jeux vidéos disponible sur le pass d'Xbox de microsoft. Toutes les ventes sont en millions ainsi l'unité de mesure utilisé pour toute la suite de l'analyse et le million de vente. 1 = 1 000 000 vente de x jeu.
+
+Données quantitatives étudiés : "Global_sales" qui represente les ventes globales du jeu en question dans le monde
+"JP_Sales" qui represente les ventes du jeu en question au Japon
+
+Données qualitatives : "Publisher" qui represente la société qui publie le jeu.
+"genre" qui represente le genre jeu comme pas exemple un jeu de tir de voitures etc.
+
+Les principales questions qui nous viennent sont les suivantes :
+  Est-ce qu'une société qui publie beaucoup de jeu vendra en moyenne plus qu'une société qui en publie moins ?
+  Est-ce que certain genre de jeu sont en moyenne plus acheté que d'autres ?
+  Est-ce que les valeurs trouvés dans le monde sont les memes pour celles du japon ? Par exemple si x type de jeu est plus achetés dans le monde est-ce le meme pour le Japon ou ils ont beaucoup plus de vente pour le genre y.
+
+COncernant les variables quantitatives :
+
+"Global_Sales" : 
+caractere gaussien, :
+
+```{r , fig.width=20,fig.height=4}
+hist(app[["Global_Sales"]] , main="Vente global ",xlab="Ventes",prob=T,breaks=5000,xlim=c(0,3))
+```
+
+On peut facilement remaquer que ce jeu de données n'est absolument pas gaussien
+verification par tests
+
+```{r , fig.width=20,fig.height=4}
+  qqnorm(app[["Global_Sales"]])
+abline(mean(app[["Global_Sales"]]),sd(app[["Global_Sales"]]),col=2)
+```
+Cela confirme ce que l'on pensait sur l'histogramme
+
+Estimateur de moyenne et variance :
+```{r , fig.width=20,fig.height=4}
+mean(app[["Global_Sales"]])
+```
+Varience :
+
+```{r , fig.width=20,fig.height=4}
+var(app[["Global_Sales"]])
+```
+
+Intervalle de confiance des moyenne à 95% :
+```{r , fig.width=20,fig.height=4}
+interval=t.test(app[["Global_Sales"]])
+interval$conf.int
+```
+Etant donné que nous avont une variance importante pour notre jeu de donnée la moyenne avec une intervalle de confiance à 95% à une difference assez élevé entre ces deux extrémité. Il faut aussi garder en tête que notre donnée n'est pas gaussienne qu'une tres grande majorité des données sont dans l'intervale extrême inférieur
+
+Analyse de la deuxième variable quantitative 
+"JP_Sales" : 
+caractere gaussien, :
+
+```{r , fig.width=20,fig.height=4}
+hist(app[["JP_Sales"]] , main="Vente japon ",xlab="Ventes",prob=T,breaks=5000,xlim=c(0,0.3))
+```
+
+On peut facilement remaquer que les ventes au japon tout comme les ventes gloabales ne sont pas du tout gaussiennes
+verification par tests
+
+```{r , fig.width=20,fig.height=4}
+  qqnorm(app[["JP_Sales"]])
+abline(mean(app[["JP_Sales"]]),sd(app[["JP_Sales"]]),col=2)
+```
+Cela confirme ce que l'on pensait sur l'histogramme
+
+Estimateur de moyenne et variance :
+```{r , fig.width=20,fig.height=4}
+mean(app[["JP_Sales"]])
+```
+Varience :
+
+```{r , fig.width=20,fig.height=4}
+var(app[["JP_Sales"]])
+```
+
+Intervalle de confiance des moyenne à 95% :
+```{r , fig.width=20,fig.height=4}
+interval=t.test(app[["JP_Sales"]])
+interval$conf.int
+```
+Nous pouvons remarquer que les ventes moyennes sont logiquement bien moins importante sur les ventes du Japon que pour les ventes du monde entier.Il est aussi interessant de remarquer que l'intervale de confiance est toujours très dispersés, encore plus que pour celle du Japon.
+
+Calcul d'intervalle de confiance d'une proportion :
+```{r , fig.width=20,fig.height=4}
+dep=which(app[["Global_Sales"]]>1)
+intervalProp = prop.test(length(dep),length(app[["Global_Sales"]]))
+intervalProp$conf.int
+```
+Nous faisons une intervalle de confiance sur les vente globales supérieur à 1 et l'on se rend compte que peu sont au dessus.
+
+Verifions on se trouve la majorité des ventes :
+```{r , fig.width=20,fig.height=4}
+dep=which(app[["Global_Sales"]]>0 & app[["Global_Sales"]]<0.2)
+intervalProp = prop.test(length(dep),length(app[["Global_Sales"]]))
+intervalProp$conf.int
+```
+Avec une confiance de 95% on peut voir que plus de la moitier des jeux annalysés se trouvent entre 0 et 0.2 ventes globales
+
+Analyse multivariée
+
+quanti x quali : Global_Sales x Genre
+
+Ici, nous allons regarder si la catégorie du jeu a une influence sur les vente moyenne.
+```{r , fig.width=20,fig.height=4}
+prAvg<- app %>%
+  filter(!is.na(`Global_Sales`)) %>%
+  group_by(`Genre`) %>%
+  summarise(AvgSell=mean(`Global_Sales`),sd=sd(`Global_Sales`)) %>%
+  ggplot(app,mapping=aes(`Genre`,AvgSell,fill=`Genre`))+
+  geom_col()
+
+  prAvg
+    ggtitle("Vente moyenne en fonction du genre principal de l'application")
+```
+Nous pouvons voir que certains genre de jeux sont beaucoup plus vendue que d'autres. Ainsi les genre "plateforme" et de "tir" sont les plus vendues en moyenne. Alors que d'autres sont jusqu'a 4 fois moins important que "plateforme" comme par exemple le genre "adventure" ou meme "strategie" ces données ne sont pas tres étonnante sachant que l'xbox pass est fait pour les consoles d'avoir les genre tir et plateforme en premier. Les consoles étant tres adapté à ce genre de jeu.
+
+verifions grace à un boxplot
+```{r , fig.width=20,fig.height=4}
+
+prAvg<- app %>%
+  filter(!is.na(`Global_Sales`)) %>%
+  ggplot(app,mapping=aes(`Genre`,`Global_Sales`,fill=`Genre`))+
+  geom_boxplot()
+
+  prAvg
+    ggtitle("Vente moyenne en fonction du genre principal de l'application")
+```
+Nous ne pouvons rien en retirer car les valeurs basses et les valeurs extreme haut brouille tout nous allons prendre que les vente qui sont en dessous de 3 soit 
+
+```{r , fig.width=20,fig.height=4}
+
+prAvg<- app %>%
+  filter(!is.na(`Global_Sales`)) %>%
+    filter(`Global_Sales` < 3) %>%
+  ggplot(app,mapping=aes(`Genre`,`Global_Sales`,fill=`Genre`))+
+  geom_boxplot()
+
+  prAvg
+    ggtitle("Vente moyenne en fonction du genre principal de l'application")
+```
+Nous pouvons voir que les median de tous les gens sont tres proches mais que les valeurs extremes des genre font que des 3 eme quartiles creuse l'écart avec celle des autres. Celle de plateforme par exemple la median est tres proche des hautre mes le 3eme quartile est visuellement plus élevé
+
+quali x quali : Nombre application par editeurs X Global_Sales
+
 Nous avons, dans un premier temps décidé de regarder si les développeurs qui ont beaucoup de jeux à leur actif sur l'xbox Game passe ont plus de ventes.
 
 Donc on commence par regarder ceux qui ont le plus de jeux à leur actif.
@@ -60,17 +204,19 @@ tableFinal %>%
   geom_smooth(method="auto",color="red",se=TRUE)+
   ggtitle("Vente moyenne en fonction du nombre d'applications")
 ```
+Il est difficile d'affirmer que les entreprises qui publies le plus sont celle qui ont le plus de ventes. En effet nous pouvons voir qu'une tres frand majorités de jeux se trouvent entre 0 et 1 de ventes moyennes peu importe s'il ont beaucoup de jeux. Meme les entreprises qui ont plus de 250 jeux sont toutes entre 0 et 1 ventes (sauf une qui ne suit pas la masse). Nous pouvons en conclure que le nombre jeux publiés n'influe pas sur la vente moyenne des jeux.
 
+quanti x quanti : vente japon vs vente global
+nuage de points
 
-Ici, nous allons regarder si la catégorie du jeu a une influence sur les notes, en moyenne.
-```{r , fig.width=20,fig.height=4}
-prAvg<- app %>%
+```{r message=FALSE, warning=FALSE}
+data <- app %>% 
   filter(!is.na(`Global_Sales`)) %>%
-  group_by(`Genre`) %>%
-  summarise(AvgSell=mean(`Global_Sales`),sd=sd(`Global_Sales`)) %>%
-  ggplot(app,mapping=aes(`Genre`,AvgSell,fill=`Genre`))+
-  geom_col()
-  prAvg
-    ggtitle("Vente moyenne en fonction du genre principal de l'application")
+  filter(`Global_Sales` < 40) %>%
+  ggplot(app,mapping=aes(`JP_Sales`,`Global_Sales`,fill=`JP_Sales`))+
+  geom_point(size=2, shape=23) + geom_abline()
+
+data + labs(y = "Vente monde", x = "Vente Japon") 
 ```
->> TO DO << FAIRE DES BOX PLOT
+
+Nous pouvons voir comment les ventes du Japon suivent celles du monde. Elle suit un espece de cone.
